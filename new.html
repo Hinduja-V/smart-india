@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mood Check-in</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-neutral-950 text-neutral-100 antialiased min-h-screen" style="font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji';">
+  <main class="mx-auto max-w-5xl px-5 py-10">
+    <!-- Header -->
+    <header class="mb-8">
+      <div class="flex items-center gap-3">
+        <div class="h-9 w-9 rounded-md bg-neutral-900 ring-1 ring-white/10 flex items-center justify-center text-sm tracking-tight font-semibold">M</div>
+        <div class="flex-1">
+          <h1 class="text-2xl md:text-3xl tracking-tight font-semibold">Mood Check-in</h1>
+          <p class="text-neutral-400 text-sm md:text-base">Slide to the color that matches how you feel right now. Think thermometer—for feelings.</p>
+        </div>
+        <button id="infoBtn" class="hidden sm:flex items-center gap-2 rounded-md bg-neutral-900/70 hover:bg-neutral-800 px-3 py-2 text-sm text-neutral-300 transition-colors ring-1 ring-white/10">
+          <i data-lucide="info" class="w-4 h-4"></i>
+          <span>How it works</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Grid: Slider + Follow-up + Chart -->
+    <section class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <!-- Slider Card -->
+      <div class="lg:col-span-3 rounded-xl bg-neutral-900/60 ring-1 ring-white/10 p-5 md:p-6 backdrop-blur-sm">
+        <div class="flex items-start justify-between gap-4 mb-4">
+          <div>
+            <h2 class="text-lg md:text-xl tracking-tight font-semibold">How are you feeling?</h2>
+            <p class="text-neutral-400 text-sm">Drag the dot. Hover or tap to see the label.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="text-sm text-neutral-400">Today</div>
+            <div class="h-6 w-px bg-white/10"></div>
+            <button id="resetBtn" class="text-sm text-neutral-300 hover:text-white transition-colors px-2 py-1 rounded-md hover:bg-neutral-800 ring-1 ring-white/5">Reset</button>
+          </div>
+        </div>
+
+        <!-- Live Readout -->
+        <div class="flex items-center gap-4 mb-5">
+          <div id="bigEmoji" class="text-3xl md:text-4xl select-none">💙</div>
+          <div>
+            <div id="moodTitle" class="text-base md:text-lg font-medium">Calm</div>
+            <div id="moodCaption" class="text-sm text-neutral-400">Slide to update your mood</div>
+          </div>
+        </div>
+
+        <!-- Slider Track -->
+        <div class="relative">
+          <!-- Emoji markers -->
+          <div class="relative h-8 select-none">
+            <div class="absolute -top-2 left-0 -translate-x-1/2 text-xl" title="Happy / Relaxed">🟢</div>
+            <div class="absolute -top-2 left-1/4 -translate-x-1/2 text-xl" title="Calm / Okay">💙</div>
+            <div class="absolute -top-2 left-1/2 -translate-x-1/2 text-xl" title="Meh / Tired">🟡</div>
+            <div class="absolute -top-2 left-3/4 -translate-x-1/2 text-xl" title="Anxious / Stressed">🟠</div>
+            <div class="absolute -top-2 right-0 translate-x-1/2 text-xl" title="Sad / Angry">🔴</div>
+          </div>
+
+          <!-- Gradient track -->
+          <div id="moodTrack" class="relative w-full h-6 rounded-full ring-1 ring-white/10 overflow-hidden" style="background: linear-gradient(90deg, #22c55e 0%, #22c55e 20%, #3b82f6 20%, #3b82f6 40%, #eab308 40%, #eab308 60%, #f97316 60%, #f97316 80%, #ef4444 80%, #ef4444 100%);">
+            <!-- Tick dividers -->
+            <div class="absolute inset-0 pointer-events-none">
+              <div class="absolute left-1/5 top-0 bottom-0 w-px bg-white/20"></div>
+              <div class="absolute left-2/5 top-0 bottom-0 w-px bg-white/20"></div>
+              <div class="absolute left-3/5 top-0 bottom-0 w-px bg-white/20"></div>
+              <div class="absolute left-4/5 top-0 bottom-0 w-px bg-white/20"></div>
+            </div>
+            <!-- Knob -->
+            <button id="knob" role="slider" aria-valuemin="0" aria-valuemax="100" aria-valuenow="40" aria-label="Mood slider"
+              class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-7 w-7 rounded-full bg-white text-neutral-900 shadow-lg ring-2 ring-white/90 hover:scale-105 active:scale-95 transition-transform"
+              style="left: 40%;">
+              <!-- Tooltip -->
+              <div id="knobTooltip" class="pointer-events-none absolute -top-9 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-neutral-900 text-neutral-100 text-xs px-2 py-1 ring-1 ring-white/10 opacity-0 group-hover:opacity-100"
+                   style="transition: opacity .2s ease;">Calm</div>
+            </button>
+          </div>
+
+          <!-- Legend -->
+          <div class="mt-3 grid grid-cols-5 text-[12px] text-neutral-300">
+            <div class="text-left">Happy</div>
+            <div class="text-center">Calm</div>
+            <div class="text-center">Meh</div>
+            <div class="text-center">Anxious</div>
+            <div class="text-right">Sad</div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <button id="saveBtn" class="inline-flex items-center justify-center gap-2 rounded-md bg-white text-neutral-900 hover:bg-neutral-200 active:bg-neutral-300 px-4 py-2 text-sm font-medium transition-colors ring-1 ring-white/0">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            Save check-in
+          </button>
+          <button id="skipBtn" class="inline-flex items-center justify-center gap-2 rounded-md bg-neutral-900 hover:bg-neutral-800 px-4 py-2 text-sm text-neutral-300 transition-colors ring-1 ring-white/10">
+            <i data-lucide="x" class="w-4 h-4"></i>
+            Skip
+          </button>
+          <div class="sm:ml-auto flex items-center gap-2 text-sm text-neutral-400">
+            <i data-lucide="mouse-pointer" class="w-4 h-4"></i>
+            <span>Drag or ← → keys</span>
+          </div>
+        </div>
+
+        <div class="mt-6 h-px w-full bg-white/10"></div>
+
+        <!-- Optional Follow-up -->
+        <div class="mt-6">
+          <div class="flex items-center gap-2 mb-3">
+            <i data-lucide="moon" class="w-4 h-4 text-neutral-300"></i>
+            <h3 class="text-sm font-medium tracking-tight">How was your sleep?</h3>
+          </div>
+          <div id="sleepGroup" class="grid grid-cols-5 gap-2">
+            <button data-val="1" class="sleep-btn rounded-md bg-neutral-900 hover:bg-neutral-800 px-3 py-2 text-sm ring-1 ring-white/10 text-neutral-300 transition-colors" aria-pressed="false">😵‍💫</button>
+            <button data-val="2" class="sleep-btn rounded-md bg-neutral-900 hover:bg-neutral-800 px-3 py-2 text-sm ring-1 ring-white/10 text-neutral-300 transition-colors" aria-pressed="false">🥱</button>
+            <button data-val="3" class="sleep-btn rounded-md bg-neutral-900 hover:bg-neutral-800 px-3 py-2 text-sm ring-1 ring-white/10 text-neutral-300 transition-colors" aria-pressed="true">😐</button>
+            <button data-val="4" class="sleep-btn rounded-md bg-neutral-900 hover:bg-neutral-800 px-3 py-2 text-sm ring-1 ring-white/10 text-neutral-300 transition-colors" aria-pressed="false">🙂</button>
+            <button data-val="5" class="sleep-btn rounded-md bg-neutral-900 hover:bg-neutral-800 px-3 py-2 text-sm ring-1 ring-white/10 text-neutral-300 transition-colors" aria-pressed="false">😴</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart Card -->
+      <div class="lg:col-span-2 rounded-xl bg-neutral-900/60 ring-1 ring-white/10 p-5 md:p-6 backdrop-blur-sm">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h2 class="text-lg tracking-tight font-semibold">Mood history</h2>
+            <p class="text-sm text-neutral-400">Track how your color changes over time.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="seedBtn" class="hidden sm:inline-flex items-center gap-2 text-xs rounded-md bg-neutral-900 px-2.5 py-1.5 ring-1 ring-white/10 text-neutral-300 hover:bg-neutral-800 transition-colors">
+              <i data-lucide="sparkles" class="w-4 h-4"></i>
+              Seed
+            </button>
+            <button id="clearBtn" class="inline-flex items-center gap-2 text-xs rounded-md bg-neutral-900 px-2.5 py-1.5 ring-1 ring-white/10 text-neutral-300 hover:bg-neutral-800 transition-colors">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+              Clear
+            </button>
+          </div>
+        </div>
+        <div class="mt-2 h-px w-full bg-white/10"></div>
+        <!-- Wrap canvas in its own div inside another to avoid growth bug -->
+        <div class="mt-4">
+          <div class="h-56">
+            <canvas id="moodChart"></canvas>
+          </div>
+        </div>
+        <div class="mt-4 grid grid-cols-5 gap-2 text-[11px] text-neutral-400">
+          <div class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full" style="background:#22c55e"></span>Happy</div>
+          <div class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full" style="background:#3b82f6"></span>Calm</div>
+          <div class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full" style="background:#eab308"></span>Meh</div>
+          <div class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full" style="background:#f97316"></span>Anxious</div>
+          <div class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-full" style="background:#ef4444"></span>Sad</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer tip -->
+    <footer class="mt-8 text-xs text-neutral-500 flex items-center gap-2">
+      <i data-lucide="shield" class="w-3.5 h-3.5"></i>
+      Your check-ins are stored in your browser only.
+    </footer>
+  </main>
+
+  <script>
+    // Icons
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) {
+        lucide.createIcons({ attrs: { 'stroke-width': 1.5 } });
+      }
+    });
+
+    // Mood configuration
+    const MOODS = [
+      { name: 'Happy', caption: 'Relaxed, motivated', emoji: '🟢', face: '😊', color: '#22c55e', range: [0, 19.999] },
+      { name: 'Calm', caption: 'Content, okay', emoji: '💙', face: '🙂', color: '#3b82f6', range: [20, 39.999] },
+      { name: 'Meh', caption: 'Tired, distracted', emoji: '🟡', face: '😐', color: '#eab308', range: [40, 59.999] },
+      { name: 'Anxious', caption: 'Stressed, overwhelmed', emoji: '🟠', face: '😟', color: '#f97316', range: [60, 79.999] },
+      { name: 'Sad', caption: 'Angry, unmotivated', emoji: '🔴', face: '😞', color: '#ef4444', range: [80, 100] }
+    ];
+
+    // Elements
+    const track = document.getElementById('moodTrack');
+    const knob = document.getElementById('knob');
+    const tooltip = document.getElementById('knobTooltip');
+    const bigEmoji = document.getElementById('bigEmoji');
+    const moodTitle = document.getElementById('moodTitle');
+    const moodCaption = document.getElementById('moodCaption');
+    const saveBtn = document.getElementById('saveBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const skipBtn = document.getElementById('skipBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const seedBtn = document.getElementById('seedBtn');
+    const sleepGroup = document.getElementById('sleepGroup');
+
+    // State
+    let value = 40; // 0..100
+    let dragging = false;
+    let sleepVal = 3;
+
+    // Utils
+    function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
+
+    function getMoodFromValue(v) {
+      return MOODS.find(m => v >= m.range[0] && v <= m.range[1]) || MOODS[2];
+    }
+
+    function updateUI(fromKeyboard=false) {
+      knob.style.left = value + '%';
+      knob.setAttribute('aria-valuenow', Math.round(value));
+      const mood = getMoodFromValue(value);
+      tooltip.textContent = mood.name;
+      tooltip.style.opacity = dragging ? '1' : (fromKeyboard ? '1' : '0');
+      bigEmoji.textContent = mood.face;
+      moodTitle.textContent = mood.name;
+      moodCaption.textContent = mood.caption;
+      knob.style.boxShadow = `0 8px 24px ${mood.color}33`;
+      knob.style.borderColor = mood.color;
+      knob.style.ringColor = mood.color;
+      knob.style.outlineColor = mood.color;
+      knob.style.backgroundColor = '#ffffff';
+      knob.style.color = '#111827';
+    }
+
+    function setValueByClientX(clientX) {
+      const rect = track.getBoundingClientRect();
+      const x = clamp(clientX - rect.left, 0, rect.width);
+      value = Math.round((x / rect.width) * 100);
+      updateUI();
+    }
+
+    // Drag interactions
+    knob.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      dragging = true;
+      updateUI();
+    });
+    document.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      setValueByClientX(e.clientX);
+    });
+    document.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      dragging = false;
+      updateUI();
+    });
+
+    // Touch
+    knob.addEventListener('touchstart', (e) => {
+      dragging = true;
+      updateUI();
+    }, { passive: true });
+    document.addEventListener('touchmove', (e) => {
+      if (!dragging) return;
+      const touch = e.touches[0];
+      setValueByClientX(touch.clientX);
+    }, { passive: true });
+    document.addEventListener('touchend', () => {
+      if (!dragging) return;
+      dragging = false;
+      updateUI();
+    });
+
+    // Click on track to jump
+    track.addEventListener('mousedown', (e) => {
+      if (e.target === knob) return;
+      setValueByClientX(e.clientX);
+    });
+
+    // Keyboard
+    knob.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') { value = clamp(value - 2, 0, 100); updateUI(true); }
+      if (e.key === 'ArrowRight') { value = clamp(value + 2, 0, 100); updateUI(true); }
+      if (e.key === 'Home') { value = 0; updateUI(true); }
+      if (e.key === 'End') { value = 100; updateUI(true); }
+    });
+
+    // Sleep selection (custom buttons)
+    sleepGroup.querySelectorAll('.sleep-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        sleepGroup.querySelectorAll('.sleep-btn').forEach(b => {
+          b.setAttribute('aria-pressed', 'false');
+          b.classList.remove('ring-2', 'ring-white/30', 'bg-neutral-800');
+        });
+        btn.setAttribute('aria-pressed', 'true');
+        btn.classList.add('ring-2', 'ring-white/30', 'bg-neutral-800');
+        sleepVal = parseInt(btn.getAttribute('data-val'), 10);
+      });
+    });
+
+    // Storage helpers
+    const STORAGE_KEY = 'moodEntries.v1';
+    function loadEntries() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+      catch { return []; }
+    }
+    function saveEntries(entries) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+    }
+
+    // Chart
+    const ctx = document.getElementById('moodChart').getContext('2d');
+    let chart;
+
+    function valueToColor(v) { return getMoodFromValue(v).color; }
+    function valueToLabel(v) { return getMoodFromValue(v).name; }
+    function formatDate(ts) {
+      const d = new Date(ts);
+      return `${d.getMonth()+1}/${d.getDate()}`;
+    }
+
+    function buildChart() {
+      const entries = loadEntries().slice(-14); // last 14
+      const labels = entries.map(e => formatDate(e.ts));
+      const data = entries.map(e => e.value);
+      const pointColors = entries.map(e => valueToColor(e.value));
+
+      if (chart) { chart.destroy(); }
+
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Mood',
+            data,
+            borderColor: '#9CA3AF',
+            borderWidth: 1.5,
+            pointRadius: 4,
+            pointHoverRadius: 5,
+            tension: 0.3,
+            pointBackgroundColor: pointColors,
+            pointBorderColor: '#111827',
+            fill: false
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => {
+                  const v = ctx.parsed.y;
+                  return ` ${valueToLabel(v)} (${Math.round(v)}%)`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(255,255,255,0.05)' },
+              ticks: { color: 'rgba(229,231,235,.7)', maxRotation: 0, autoSkip: true }
+            },
+            y: {
+              suggestedMin: 0, suggestedMax: 100,
+              grid: { color: 'rgba(255,255,255,0.06)' },
+              ticks: { color: 'rgba(229,231,235,.7)', stepSize: 20 }
+            }
+          }
+        }
+      });
+    }
+
+    // Seed sample data
+    function seedData() {
+      const now = Date.now();
+      const samples = [];
+      for (let i = 12; i >= 0; i--) {
+        const v = [15, 30, 45, 65, 85][Math.floor(Math.random()*5)];
+        const jitter = (Math.random()*10 - 5);
+        samples.push({ ts: now - i * 86400000, value: clamp(v + jitter, 0, 100), sleep: Math.ceil(Math.random()*5) });
+      }
+      saveEntries(samples);
+      buildChart();
+    }
+
+    // Save current check-in
+    function saveCheckIn() {
+      const entries = loadEntries();
+      entries.push({ ts: Date.now(), value, sleep: sleepVal });
+      saveEntries(entries);
+      buildChart();
+      // Subtle acknowledgement
+      saveBtn.textContent = 'Saved!';
+      setTimeout(() => {
+        saveBtn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Save check-in';
+        if (window.lucide) lucide.createIcons({ attrs: { 'stroke-width': 1.5 } });
+      }, 900);
+    }
+
+    // Reset
+    function resetUI() {
+      value = 40;
+      sleepVal = 3;
+      sleepGroup.querySelectorAll('.sleep-btn').forEach((b, idx) => {
+        const pressed = (idx === 2);
+        b.setAttribute('aria-pressed', pressed ? 'true' : 'false');
+        b.classList.toggle('ring-2', pressed);
+        b.classList.toggle('ring-white/30', pressed);
+        b.classList.toggle('bg-neutral-800', pressed);
+      });
+      updateUI();
+    }
+
+    // Clear
+    function clearData() {
+      localStorage.removeItem(STORAGE_KEY);
+      buildChart();
+    }
+
+    // Bind
+    saveBtn.addEventListener('click', saveCheckIn);
+    resetBtn.addEventListener('click', resetUI);
+    skipBtn.addEventListener('click', () => { value = clamp(value + 1, 0, 100); updateUI(); });
+    clearBtn.addEventListener('click', clearData);
+    if (seedBtn) seedBtn.addEventListener('click', seedData);
+
+    // Init
+    updateUI();
+    if (loadEntries().length === 0) seedData(); else buildChart();
+  </script>
+</body>
+</html>
